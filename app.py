@@ -21,7 +21,8 @@ connection_pool = pool.SimpleConnectionPool(
     port=os.getenv("DB_PORT"),
     database=os.getenv("DB_NAME"),
     user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORDD"),
+    password=os.getenv("DB_PASSWORD"),
+    sslmode="require",
 )
 
 def get_db_connection():
