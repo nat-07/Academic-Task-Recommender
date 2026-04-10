@@ -17,12 +17,8 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "change_this_to_something_secret"
 # DB config
 connection_pool = pool.SimpleConnectionPool(
     1, 10,
-    host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT"),
-    database=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    sslmode="require",
+    dsn=os.getenv("DATABASE_URL"),
+    sslmode="require"
 )
 
 def get_db_connection():
