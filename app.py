@@ -2,12 +2,6 @@ from flask import Flask, jsonify, request, redirect, url_for, render_template, s
 from psycopg2 import pool
 from dotenv import load_dotenv
 import os
-from datetime import datetime
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_pipeline
 import logging
 from sklearn.metrics.pairwise import cosine_similarity
 from ml_model import recommend_tasks
