@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+  <title>Sign Up</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #007bff;
+    }
+
+    .container {
+      max-width: 400px;
+      margin: 80px auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .create-button {
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .create-button:hover {
+      background: #0056b3;
+    }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: #007bff;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: underline;
+      margin-top: 5px;
+    }
+
+    .link-btn:hover {
+      color: #0056b3;
+    }
+
+    .login-link {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+.login-link:hover {
+  color: #0056b3;
+}
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h2>Sign Up</h2>
+
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <input type="password" id="confirmPassword" placeholder="Confirm Password" />
+
+    <button id="signupBtn" class="create-button">Create Account</button>
+
+    <button id="loginRedirect" class="login-link">
+      Already have an account? Login
+    </button>
+  </div>
+
+  <script>
+    document.getElementById("signupBtn").onclick = async () => {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      if (!username || !password) {
+        alert("Please fill all fields");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        alert("Passwords do not match");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/sign-up", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success") {
+          alert("Account created!");
+          window.location.href = "/";
+        } else {
+          alert(data.message || "Signup failed");
+        }
+      } catch {
+        alert("Error signing up");
+      }
+    };
+
+    document.getElementById("loginRedirect").onclick = () => {
+      window.location.href = "/";
+    };
+  </script>
+
+</body>
+</html>

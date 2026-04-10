@@ -1,0 +1,8 @@
+Flask
+Flask_SQLAlchemy
+gunicorn
+psycopg2
+dotenv
+os
+pandas
+sklearn
