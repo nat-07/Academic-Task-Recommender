@@ -190,7 +190,7 @@ def get_modules():
                 "module_id": r[0],
                 "name": r[1],
                 "likeness": float(r[2]),
-                "difficulty": int(r[3])
+                "difficulty": float(r[3])
             }
             for r in rows
         ]

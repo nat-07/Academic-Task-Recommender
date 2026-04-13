@@ -150,6 +150,13 @@
         color: #777;
       }
 
+      .helper-text {
+  font-size: 12px;
+  color: #777;
+  margin-top: -5px;
+  text-align: center;
+}
+
       .task-btn {
         flex-shrink: 0;
         background-color: #007bff;
@@ -181,23 +188,39 @@
         margin-top: 20px;
       }
 
+      #addModuleDropdown, 
+      #editModuleName, 
+      #taskTypeSelect{
+        margin-bottom:10px;
+      }
+
       .slider-row {
         display: flex;
         align-items: center;
         gap: 10px;
         width: 100%;
         max-width: 400px;
+        margin-top: -5px;
       }
 
       .slider-row input[type="range"] {
         flex: 1;
       }
 
+      
+
+      #likenessVal, 
+      #difficultyVal, 
+      #taskDifficultyVal, 
+      #addLikenessVal, 
+      #addDifficultyVal, 
       #val {
         font-size: 16px;
         font-weight: 500;
         min-width: 40px;
-        text-align: right;
+        text-align: center;
+        margin-bottom: 10px;
+        color:#0056b3;
       }
 
       #getTasksBtn,
@@ -273,6 +296,11 @@
       .cancel {
         background: #ccc;
         color: black;
+      }
+
+      .section-title {
+        margin-bottom: 5px;
+        margin-top:30px;
       }
 
       /* -----------------------------
@@ -377,7 +405,7 @@
 
     <p><b>1. Modules</b><br>
     Click "Edit Modules" → "+ Add Module".</br>
-    Pick your module out of the currently listed (more will be added in future updates), and set how much you like that module with "Likeness", and how difficult it is with "Difficulty". </br> 
+    Pick your module out of the currently listed (more will be added in future updates), and set how much you like that module with "Likeability", and how difficult it is with "Difficulty". </br> 
     You can edit and delete your modules. However, deleting a module will also delete the current active tasks corresponding to that module. 
     
     <p><b>2. Tasks</b><br>
@@ -411,13 +439,17 @@
     </select>
 
     <!-- Likeness Slider -->
-    <label>Likeness (0–1)</label>
+    <label>Module Likeability</label>
+    <small class="helper-text">How much do you like this module? (0 = Hate it!, 1 = Love it!)</small>
     <input type="range" id="addLikeness" min="0" max="1" step="0.1" value="0.5" />
     <span id="addLikenessVal">0.5</span>
 
     <!-- Difficulty Input -->
-    <label>Difficulty (1–5)</label>
-    <input type="number" id="addDifficulty" min="1" max="5" value="3" />
+    <label>Difficulty</label>
+    <small class="helper-text">How difficult is this module for you? (0 = easy, 1 = hard)</small>
+    <input type="range" id="addDifficulty" min="0" max="1" step="0.1" value="0.5" />
+    <span id="addDifficultyVal">0.5</span>
+
 
     <div class="modal-actions">
       <button id="saveAddModuleBtn" class="task-btn">Save</button>
@@ -429,10 +461,12 @@
   <div id="editModuleModal" class="modal">
     <div class="modal-content">
       <h3 id="moduleModalTitle">Edit Module</h3>
+      
+      <input type="text" id="editModuleName" placeholder="Module name" disabled />
 
-      <input type="text" id="editModuleName" placeholder="Module name" />
+      <label>Module Likeability</label>
+      <small class="helper-text">How much do you like this module? (0 = Hate it!, 1 = Love it!)</small>
 
-      <label>Likeness (0–1)</label>
       <input
         type="range"
         id="editLikeness"
@@ -443,8 +477,19 @@
       />
       <span id="likenessVal">0.5</span>
 
-      <label>Difficulty (1–5)</label>
-      <input type="number" id="editDifficulty" min="1" max="5" value="3" />
+      <label>Module Difficulty</label>
+      <small class="helper-text">How difficult is this module for you? (0 = easy, 1 = hard)</small>
+
+      
+      <input
+        type="range"
+        id="editDifficulty"
+        min="0"
+        max="1"
+        step="0.1"
+        value="0.5"
+      />
+      <span id="difficultyVal">0.5</span>
 
       <div class="modal-actions">
         <button id="saveModuleChanges" class="task-btn">Save</button>
@@ -476,14 +521,17 @@
       <option value="Practice">Practice</option>
     </select>
 
-    <label for="taskDifficulty">Difficulty (0–1)</label>
-<input type="number" 
-       id="taskDifficulty" 
-       min="0" 
-       max="1" 
-       step="0.1" 
-       value="0.5" 
-       placeholder="Enter difficulty (0-1)" />
+    <label for="taskDifficulty">Task Difficulty</label>
+    <small class="helper-text">How hard will this task be for you?(0 = easy, 1 = hard)</small>
+
+<input type="range"
+       id="taskDifficulty"
+       min="0"
+       max="1"
+       step="0.1"
+       value="0.5" />
+<span id="taskDifficultyVal">0.5</span>
+
 
     <!-- Estimated Time -->
     <label for="estimatedTime">Estimated Time (minutes)</label>
@@ -516,6 +564,7 @@
 
         <div class="controls">
           <label for="motivation">Motivation</label>
+            <small class="helper-text">What is your current motivation? (0 = none, 5 = alot!) </small>
 
           <div class="slider-row">
             <input
@@ -526,13 +575,15 @@
               step="0.1"
               value="2.5"
             />
-            <span id="val">2.5</span>
+            
           </div>
+          <span id="val">2.5</span>
 
           <button id="getTasksBtn" class="task-btn">Get Tasks</button>
         </div>
 
-        <h3 class="section-title">Recommendeded Tasks</h3>
+        <h3 class="section-title">Recommended Tasks</h3>
+        <small class="helper-text">Ranked from the most to the least recommended, based on algorithm and data</small>
 
         <div id="recommendationBox"></div>
       </div>
@@ -565,6 +616,7 @@
       const editLikeness = document.getElementById("editLikeness");
       const likenessVal = document.getElementById("likenessVal");
       const editDifficulty = document.getElementById("editDifficulty");
+      const difficultyVal = document.getElementById("difficultyVal");
 
       const tutorialModal = document.getElementById("tutorialModal");
 const tutorialBtn = document.getElementById("tutorialBtn");
@@ -577,6 +629,13 @@ const closeTutorialBtn = document.getElementById("closeTutorialBtn");
       // Login
       const loginBtn = document.getElementById("loginBtn");
 
+
+const taskDifficulty = document.getElementById("taskDifficulty");
+const taskDifficultyVal = document.getElementById("taskDifficultyVal");
+
+taskDifficulty.oninput = () => {
+  taskDifficultyVal.textContent = taskDifficulty.value;
+};
       /* -----------------------------
    STATE
 ----------------------------- */
@@ -608,6 +667,7 @@ const addModuleDropdown = document.getElementById("addModuleDropdown");
 const addLikeness = document.getElementById("addLikeness");
 const addLikenessVal = document.getElementById("addLikenessVal");
 const addDifficulty = document.getElementById("addDifficulty");
+const addDifficultyVal = document.getElementById("addDifficultyVal");
 const saveAddModuleBtn = document.getElementById("saveAddModuleBtn");
 const closeAddModuleModal = document.getElementById("closeAddModuleModal");
 
@@ -616,12 +676,15 @@ addLikeness.oninput = () => {
   addLikenessVal.textContent = addLikeness.value;
 };
 
+addDifficulty.oninput = () => {
+  addDifficultyVal.textContent = addDifficulty.value;
+};
 // Open/close modal
 function openAddModuleModal() {
   addModuleDropdown.value = "";
   addLikeness.value = 0.5;
   addLikenessVal.textContent = "0.5";
-  addDifficulty.value = 3;
+  addDifficultyVal.value = 0.5;
   addModuleModal.style.display = "flex";
 }
 
@@ -797,9 +860,9 @@ saveAddModuleBtn.onclick = async () => {
         moduleModalTitle.textContent = "Edit Module";
         editModuleName.value = m.name;
         editLikeness.value = m.likeness;
-        likenessVal.textContent = m.likeness;
         editDifficulty.value = m.difficulty;
-
+        likenessVal.textContent = m.likeness;
+        difficultyVal.textContent = m.difficulty;
         deleteModuleBtn.style.display = "inline-block";
         openModal(editModal);
       }
@@ -811,16 +874,10 @@ saveAddModuleBtn.onclick = async () => {
   const name = editModuleName.value.trim();
   if (!name) return alert("Enter name");
 
-  // Ensure difficulty is a number between 0 and 1
-  let difficulty = parseFloat(editDifficulty.value);
-  if (isNaN(difficulty)) difficulty = 0.5;
-  if (difficulty < 0) difficulty = 0;
-  if (difficulty > 1) difficulty = 1;
-
   const updatedModule = {
     name,
     likeness: parseFloat(editLikeness.value),
-    difficulty: parseFloat(difficulty.toFixed(2)),
+    difficulty: parseFloat(editDifficulty.value),
   };
 
   try {
@@ -911,10 +968,18 @@ saveAddModuleBtn.onclick = async () => {
         likenessVal.textContent = editLikeness.value;
       };
 
+    editDifficulty.oninput = () => {
+        difficultyVal.textContent = editDifficulty.value;
+      };
+
       /* -----------------------------
    TASK MODAL
 ----------------------------- */
-      openTaskBtn.onclick = () => openModal(taskModal);
+      openTaskBtn.onclick = () => {
+  taskDifficulty.value = 0.5;
+  taskDifficultyVal.textContent = "0.5";
+  openModal(taskModal);
+};
 
       saveTaskBtn.onclick = async () => {
   const description = taskNameInput.value.trim();
