@@ -337,3 +337,33 @@ def check_session():
         return jsonify({"logged_in": True})
     else:
         return jsonify({"logged_in": False})
+    
+@api_bp.route("/api/sign-up", methods=["POST"])
+def sign_up():
+    data = request.json
+    username = data.get("username")
+    password = data.get("password")
+
+    conn = get_db_connection()
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            "INSERT INTO users (username, password) VALUES (%s, %s) RETURNING user_id",
+            (username, password)
+        )
+
+        user_id = cur.fetchone()[0]
+        conn.commit()
+
+        # auto login
+        session["user_id"] = user_id
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": "Username may already exist"})
+
+    finally:
+        cur.close()
+        release_db_connection(conn)
