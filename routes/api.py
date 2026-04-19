@@ -222,35 +222,36 @@ def recommend_task():
 
         for t in tasks:
             task_id = t["task_id"]
+            rank = t["rank"]
 
-            # Check the most recent history for this task for this user
+            # Check latest record
             cur.execute("""
-                SELECT completed, accepted
+                SELECT accepted
                 FROM task_history
                 WHERE task_id = %s AND user_id = %s
                 ORDER BY created_at DESC
                 LIMIT 1
             """, (task_id, user_id))
+
             row = cur.fetchone()
 
             if row:
-                completed, accepted = row
-                # If both are NULL, update to FALSE
-                if completed is None and accepted is None:
+                accepted = row[0]   # ✅ FIXED
+
+                if accepted is None:
                     cur.execute("""
                         UPDATE task_history
-                        SET completed = FALSE, accepted = FALSE
+                        SET accepted = FALSE   -- ✅ FIXED
                         WHERE task_id = %s AND user_id = %s
-                        AND completed IS NULL AND accepted IS NULL
+                        AND accepted IS NULL
                     """, (task_id, user_id))
 
             # Insert new recommendation
             cur.execute("""
                 INSERT INTO task_history
-                (task_id, user_id, motivation, recommended, completed, accepted, created_at)
-                VALUES (%s, %s, %s, TRUE, NULL, NULL, NOW())
-            """, (task_id, user_id, motivation))
-
+                (task_id, user_id, motivation, rank, accepted, created_at)
+                VALUES (%s, %s, %s, %s, NULL, NOW())
+            """, (task_id, user_id, motivation, rank))
         conn.commit()
         cur.close()
 
@@ -311,7 +312,7 @@ def complete_task():
         # Mark task_history entry as completed and accepted
         cur.execute("""
             UPDATE task_history
-            SET completed = TRUE, accepted = TRUE
+            SET accepted = True
             WHERE task_id = %s AND user_id = %s
         """, (task_id, user_id))
 

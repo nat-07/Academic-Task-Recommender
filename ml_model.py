@@ -9,16 +9,6 @@ from sklearn.decomposition import TruncatedSVD
 
 
 def recommend_tasks(conn, user_id, motivation=2.5):
-    """
-    Advanced hybrid recommendation system for ranking student tasks.
-
-    Combines:
-    - Supervised ML (Gradient Boosting)
-    - Memory-based CF (cosine similarity)
-    - Model-based CF (matrix factorisation via SVD)
-    - Context-aware features (time, motivation)
-    - Recency-aware learning
-    """
 
     # ============================================================
     # 1. FETCH TASK DATA
@@ -28,8 +18,7 @@ def recommend_tasks(conn, user_id, motivation=2.5):
            t.difficulty AS task_difficulty,
            t.estimated_time,
            m.likeness AS module_likeness,
-           m.difficulty AS module_difficulty,
-           m.catching_up
+           m.difficulty AS module_difficulty
     FROM tasks t
     JOIN modules m ON t.module_id = m.module_id
     WHERE t.active = TRUE AND t.user_id = %s
@@ -40,28 +29,23 @@ def recommend_tasks(conn, user_id, motivation=2.5):
         return []
 
     # ============================================================
-    # 2. FEATURE ENGINEERING (CONTEXT-AWARE)
+    # 2. FEATURE ENGINEERING
     # ============================================================
 
-    # Encode time cyclically
     current_hour = datetime.now().hour
     df["time_sin"] = np.sin(2 * np.pi * current_hour / 24)
     df["time_cos"] = np.cos(2 * np.pi * current_hour / 24)
 
-    # Add user motivation context
     df["motivation"] = motivation
 
-    # One-hot encode task type
     task_types = pd.get_dummies(df["task_type"], prefix="type")
 
-    # Build feature matrix
     X = pd.concat([
         df[[
             "task_difficulty",
             "estimated_time",
             "module_likeness",
             "module_difficulty",
-            "catching_up",
             "motivation",
             "time_sin",
             "time_cos"
@@ -70,7 +54,7 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     ], axis=1).fillna(0)
 
     # ============================================================
-    # 3. MACHINE LEARNING (PERSONAL MODEL)
+    # 3. MACHINE LEARNING
     # ============================================================
 
     hist_query = """
@@ -79,7 +63,6 @@ def recommend_tasks(conn, user_id, motivation=2.5):
            t.estimated_time,
            m.likeness AS module_likeness,
            m.difficulty AS module_difficulty,
-           m.catching_up,
            h.accepted,
            h.motivation,
            h.created_at
@@ -93,13 +76,11 @@ def recommend_tasks(conn, user_id, motivation=2.5):
 
     if not hist_df.empty and hist_df["accepted"].nunique() > 1:
 
-        # Recency weighting (recent actions matter more)
         hist_df["created_at"] = pd.to_datetime(hist_df["created_at"]).dt.tz_localize(None)
         now = datetime.now()
         days_diff = (now - hist_df["created_at"]).dt.days
         hist_df["recency_weight"] = np.exp(-days_diff / 7)
 
-        # Encode task types
         hist_task_types = pd.get_dummies(hist_df["task_type"], prefix="type")
 
         X_hist = pd.concat([
@@ -108,16 +89,13 @@ def recommend_tasks(conn, user_id, motivation=2.5):
                 "estimated_time",
                 "module_likeness",
                 "module_difficulty",
-                "catching_up",
                 "motivation"
             ]],
             hist_task_types
         ], axis=1)
 
-        # Align columns
         X_hist = X_hist.reindex(columns=X.columns, fill_value=0).fillna(0)
 
-        # Train model
         model = make_pipeline(
             StandardScaler(),
             GradientBoostingClassifier()
@@ -129,11 +107,9 @@ def recommend_tasks(conn, user_id, motivation=2.5):
             gradientboostingclassifier__sample_weight=hist_df["recency_weight"]
         )
 
-        # Predict acceptance probability
         df["ml_score"] = model.predict_proba(X)[:, 1]
 
     else:
-        # Cold-start heuristic
         df["ml_score"] = (
             0.4 * df["module_likeness"] +
             0.3 * df["motivation"] -
@@ -153,7 +129,7 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     user_task_df = pd.read_sql(user_task_query, conn)
 
     df["cf_score"] = 0
-    df["mf_score"] = 0  # Matrix factorisation score
+    df["mf_score"] = 0
 
     if not user_task_df.empty:
 
@@ -166,9 +142,6 @@ def recommend_tasks(conn, user_id, motivation=2.5):
 
         if user_id in user_task_matrix.index:
 
-            # ---------------------------
-            # A. USER-BASED CF
-            # ---------------------------
             similarity = cosine_similarity(user_task_matrix)
 
             similarity_df = pd.DataFrame(
@@ -187,9 +160,6 @@ def recommend_tasks(conn, user_id, motivation=2.5):
                 cf_series = pd.Series(cf_scores, index=user_task_matrix.columns)
                 df["cf_score"] = df["task_id"].map(cf_series).fillna(0)
 
-            # ---------------------------
-            # B. MATRIX FACTORISATION (SVD)
-            # ---------------------------
             n_users, n_tasks = user_task_matrix.shape
             n_components = max(2, min(10, n_users, n_tasks) - 1)
 
@@ -205,12 +175,12 @@ def recommend_tasks(conn, user_id, motivation=2.5):
             )
 
             user_predictions = reconstructed_df.loc[user_id]
-
             df["mf_score"] = df["task_id"].map(user_predictions).fillna(0)
 
     # ============================================================
     # 5. NORMALISATION
     # ============================================================
+
     def normalize(series):
         if series.std() == 0:
             return series
@@ -221,8 +191,22 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     df["mf_score"] = normalize(df["mf_score"])
 
     # ============================================================
-    # 6. HYBRID SCORING (ADAPTIVE)
+    # 6. REJECTION PRIORITISATION (NEW FEATURE)
     # ============================================================
+
+    rejection_counts = user_task_df.groupby("task_id")["accepted"].apply(
+        lambda x: (x == 0).sum()
+    )
+
+    df["rejection_count"] = df["task_id"].map(rejection_counts).fillna(0)
+
+    # Smooth boost (recommended)
+    df["rejection_boost"] = 0.2 * (1 - np.exp(-df["rejection_count"] / 5))
+
+    # ============================================================
+    # 7. HYBRID SCORING
+    # ============================================================
+
     history_size = len(hist_df)
 
     if history_size < 10:
@@ -233,22 +217,27 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     df["score"] = (
         ml_weight * df["ml_score"] +
         cf_weight * df["cf_score"] +
-        mf_weight * df["mf_score"]
+        mf_weight * df["mf_score"] +
+        df["rejection_boost"]
     )
 
     # ============================================================
-    # 7. EXPLORATION
+    # 8. EXPLORATION
     # ============================================================
+
     df["score"] += np.random.normal(0, 0.02, len(df))
 
     # ============================================================
-    # 8. SORT AND RETURN
+    # 9. SORT AND RETURN
     # ============================================================
+
     df = df.sort_values(by="score", ascending=False)
+    df["rank"] = np.arange(1, len(df) + 1)
 
     return df[[
         "task_id",
         "task_description",
         "task_type",
-        "score"
+        "score",
+        "rank"
     ]].to_dict(orient="records")
