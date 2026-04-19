@@ -390,25 +390,45 @@ def sign_up():
     username = data.get("username")
     password = data.get("password")
 
+    if not username or not password:
+        return jsonify({
+            "status": "error",
+            "message": "Missing username or password"
+        }), 400
+
     conn = get_db_connection()
+
     try:
         cur = conn.cursor()
 
+        # ✅ Check if username already exists
         cur.execute(
-            "INSERT INTO users (username, password) VALUES (%s, %s) RETURNING user_id",
+            "SELECT user_id FROM users WHERE username = %s",
+            (username,)
+        )
+
+        if cur.fetchone():
+            return jsonify({
+                "status": "error",
+                "message": "Username already exists"
+            }), 409
+
+        # Insert new user
+        cur.execute(
+            """
+            INSERT INTO users (username, password)
+            VALUES (%s, %s)
+            RETURNING user_id
+            """,
             (username, password)
         )
 
         user_id = cur.fetchone()[0]
         conn.commit()
 
-        # auto login
         session["user_id"] = user_id
 
         return jsonify({"status": "success"})
-
-    except Exception as e:
-        return jsonify({"status": "error", "message": "Username may already exist"})
 
     finally:
         cur.close()
