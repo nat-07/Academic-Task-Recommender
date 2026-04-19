@@ -73,7 +73,7 @@
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: #007bff;
+  background: #ff6600;
   color: white;
   font-size: 18px;
   font-weight: bold;
@@ -84,7 +84,7 @@
 }
 
 .tutorial-btn:hover {
-  background: #0056b3;
+  background: #a25c01;
 }
 
 .tutorial-btn:active {

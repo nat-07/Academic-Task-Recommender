@@ -62,7 +62,11 @@ const modulesPanel = document.getElementById("modulesPanel");
 
 toggleBtn.onclick = () => {
   const show = modulesPanel.style.display === "none";
+
   modulesPanel.style.display = show ? "block" : "none";
+
+  // ✅ update button text
+  toggleBtn.textContent = show ? "Hide Modules" : "View Modules";
 };
 
 document.getElementById("logout-btn").onclick = async () => {

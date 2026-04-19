@@ -16,7 +16,7 @@
     <h3>Tutorial</h3>
 
     <p><b>1. Modules</b><br>
-    Click "Edit Modules" → "+ Add Module".</br>
+    Click "View Modules" → "+ Add Module".</br>
     Pick your module out of the currently listed (more will be added in future updates), and set how much you like that module with "Likeability", and how difficult it is with "Difficulty". </br> 
     You can edit and delete your modules. However, deleting a module will also delete the current active tasks corresponding to that module. 
     
@@ -114,6 +114,7 @@
   <div id="taskModal" class="modal">
   <div class="modal-content">
     <h3>Add New Task</h3>
+    <small class="helper-text">Recommender will run automatically after adding a new task.</small>
 
     <!-- Task Description -->
     <input type="text" id="taskNameInput" placeholder="Task description" />
@@ -166,7 +167,7 @@
 </div>
         <h2>Dashboard</h2>
         <button id="openModalBtn" class="task-btn">+ Add Task</button>
-        <button id="toggleModulesBtn" class="task-btn">Edit Modules</button>
+        <button id="toggleModulesBtn" class="task-btn">View Modules</button>
         <div id="modulesPanel" class="modules-panel" style="display: none">
           <h4>Modules</h4>
 
@@ -191,7 +192,7 @@
           </div>
           <span id="val">2.5</span>
 
-          <button id="getTasksBtn" class="task-btn">Get Tasks</button>
+          <button id="getTasksBtn" class="task-btn">Rank tasks for me!</button>
         </div>
 
         <h3 class="section-title">Recommended Tasks</h3>

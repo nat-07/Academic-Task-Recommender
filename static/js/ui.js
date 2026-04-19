@@ -241,7 +241,22 @@ export async function deleteCurrentModule() {
 export function renderModules(modulesList, moduleSelect) {
   const modules = getModules();
 
-  // render list
+  // 🚨 EMPTY STATE
+  if (!modules || modules.length === 0) {
+    modulesList.innerHTML = `
+      <div class="placeholder">
+        No modules yet, press "+ Add Module" to add a new module
+      </div>
+    `;
+
+    moduleSelect.innerHTML = `
+      <option disabled selected>No modules available</option>
+    `;
+
+    return; // stop here
+  }
+
+  // ✅ render list
   modulesList.innerHTML = modules
     .map(
       (m, i) => `
@@ -253,6 +268,7 @@ export function renderModules(modulesList, moduleSelect) {
     )
     .join("");
 
+  // ✅ dropdown
   moduleSelect.innerHTML = `
     <option disabled selected>Select module</option>
     ${modules
@@ -260,7 +276,7 @@ export function renderModules(modulesList, moduleSelect) {
       .join("")}
   `;
 
-  // attach edit handlers
+  // ✅ attach edit handlers
   modulesList.querySelectorAll(".edit-btn").forEach((btn) => {
     btn.onclick = () => openEditModule(btn.dataset.index);
   });
@@ -298,6 +314,14 @@ export async function completeTask(taskId) {
 
 
 export function openTaskModal() {
+  const modules = getModules();
+
+  // 🚨 BLOCK if no modules
+  if (!modules || modules.length === 0) {
+    alert("You must add a module before creating tasks.");
+    return;
+  }
+
   const taskModal = document.getElementById("taskModal");
   const taskDifficulty = document.getElementById("taskDifficulty");
   const taskDifficultyVal = document.getElementById("taskDifficultyVal");
@@ -309,10 +333,8 @@ export function openTaskModal() {
     taskDifficultyVal.textContent = taskDifficulty.value;
   };
 
-
   taskModal.style.display = "flex";
 }
-
 export function closeTaskModal(){
     const taskModal = document.getElementById("taskModal");
     taskModal.style.display = "none";
