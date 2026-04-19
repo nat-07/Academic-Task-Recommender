@@ -161,44 +161,90 @@ def add_module():
 @api_bp.route("/api/add-task", methods=["POST"])
 def add_task():
     data = request.json
+
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
     user_id = session["user_id"]
+
     task_description = data.get("task_description")
     module_name = data.get("module")
     task_type = data.get("task_type")
-    difficulty = data.get("difficulty", 1)  # default difficulty
-    estimated_time = data.get("estimated_time", 60)  # default 60 mins
+    difficulty = data.get("difficulty", 1)
+    estimated_time = data.get("estimated_time", 60)
 
     if not task_description or not module_name or not task_type:
-        return jsonify({"status": "error", "message": "Missing required fields"}), 400
+        return jsonify({
+            "status": "error",
+            "message": "Missing required fields"
+        }), 400
 
     conn = get_db_connection()
 
     try:
         cur = conn.cursor()
 
-        # Get module_id from modules table
-        cur.execute("SELECT module_id FROM modules WHERE name = %s", (module_name,))
+        # Get module_id from module name
+        cur.execute(
+            "SELECT module_id FROM modules WHERE name = %s",
+            (module_name,)
+        )
         module_row = cur.fetchone()
+
         if not module_row:
-            return jsonify({"status": "error", "message": "Module not found"}), 404
+            return jsonify({
+                "status": "error",
+                "message": "Module not found"
+            }), 404
+
         module_id = module_row[0]
+
+        # ✅ Check for duplicate task
+        cur.execute("""
+            SELECT task_id
+            FROM tasks
+            WHERE task_description = %s
+              AND module_id = %s
+              AND user_id = %s
+              AND active = TRUE
+        """, (task_description, module_id, user_id))
+
+        if cur.fetchone():
+            return jsonify({
+                "status": "error",
+                "message": "This task already exist."
+            }), 409
 
         # Insert new task
         cur.execute("""
-    INSERT INTO tasks
-    (task_description, module_id, task_type, difficulty, estimated_time, active, user_id)
-    VALUES (%s, %s, %s, %s, %s, TRUE, %s)
-    RETURNING task_id
-""", (task_description, module_id, task_type, difficulty, estimated_time, user_id))
+            INSERT INTO tasks (
+                task_description,
+                module_id,
+                task_type,
+                difficulty,
+                estimated_time,
+                active,
+                user_id
+            )
+            VALUES (%s, %s, %s, %s, %s, TRUE, %s)
+            RETURNING task_id
+        """, (
+            task_description,
+            module_id,
+            task_type,
+            difficulty,
+            estimated_time,
+            user_id
+        ))
 
         new_task_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
 
-        return jsonify({"status": "success", "task_id": new_task_id})
+        return jsonify({
+            "status": "success",
+            "task_id": new_task_id
+        })
 
     finally:
         release_db_connection(conn)

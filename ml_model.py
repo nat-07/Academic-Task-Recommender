@@ -17,6 +17,7 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     SELECT t.task_id, t.task_type, t.task_description,
            t.difficulty AS task_difficulty,
            t.estimated_time,
+           m.name AS module_name,
            m.likeness AS module_likeness,
            m.difficulty AS module_difficulty
     FROM tasks t
@@ -61,6 +62,8 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     SELECT t.task_type,
            t.difficulty AS task_difficulty,
            t.estimated_time,
+           t.module_id,
+           
            m.likeness AS module_likeness,
            m.difficulty AS module_difficulty,
            h.accepted,
@@ -182,9 +185,12 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     # ============================================================
 
     def normalize(series):
-        if series.std() == 0:
-            return series
-        return (series - series.mean()) / series.std()
+        series = series.fillna(0)
+        std = series.std()
+
+        if std == 0 or np.isnan(std):
+            return series * 0
+        return (series - series.mean()) / std
 
     df["ml_score"] = normalize(df["ml_score"])
     df["cf_score"] = normalize(df["cf_score"])
@@ -224,8 +230,16 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     # ============================================================
     # 8. EXPLORATION
     # ============================================================
-
-    df["score"] += np.random.normal(0, 0.02, len(df))
+    df[["ml_score", "cf_score", "mf_score", "rejection_boost"]] = df[
+        ["ml_score", "cf_score", "mf_score", "rejection_boost"]
+    ].fillna(0)
+    
+    df["score"] = (
+    ml_weight * df["ml_score"].fillna(0) +
+    cf_weight * df["cf_score"].fillna(0) +
+    mf_weight * df["mf_score"].fillna(0) +
+    df["rejection_boost"].fillna(0)
+)
 
     # ============================================================
     # 9. SORT AND RETURN
@@ -234,9 +248,12 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     df = df.sort_values(by="score", ascending=False)
     df["rank"] = np.arange(1, len(df) + 1)
 
+    
+
     return df[[
         "task_id",
         "task_description",
+        "module_name",
         "task_type",
         "score",
         "rank"

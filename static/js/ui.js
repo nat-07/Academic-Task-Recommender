@@ -37,7 +37,7 @@ export function renderTasks(tasks) {
         <div class="task-item">
           <div class="task-content">
             <div class="task-name">${t.task_description}</div>
-            <div class="task-type">${t.task_type}</div>
+            <div class="task-type">${t.task_type} • ${t.module_name}</div>
           </div>
           <button class="task-btn" data-id="${t.task_id}">
             Done
@@ -337,19 +337,29 @@ export async function saveTask() {
     return;
   }
 
-  await addTaskRequest({
-    user_id: 1,
-    task_description: description,
-    module,
-    task_type: type,
-    difficulty,
-    estimated_time,
-  });
+  try {
+    const res = await addTaskRequest({
+      user_id: 1,
+      task_description: description,
+      module,
+      task_type: type,
+      difficulty,
+      estimated_time,
+    });
 
-  taskModal.style.display = "none";
+    // ✅ STOP if backend returned error
+    if (!res || res.status !== "success") {
+      alert(res?.message || "Failed to add task");
+      return;
+    }
 
-  document.getElementById("taskNameInput").value = "";
+    taskModal.style.display = "none";
 
-  await getRecommendations(); // refresh tasks
+    document.getElementById("taskNameInput").value = "";
+
+    await getRecommendations(); // refresh tasks
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong while saving the task");
+  }
 }
-
