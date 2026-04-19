@@ -26,7 +26,7 @@ export function renderTasks(tasks) {
 
   if (!tasks || tasks.length === 0) {
     recommendationBox.innerHTML =
-      `<div class="placeholder">No tasks available</div>`;
+      `<div class="placeholder">No active tasks available, please add tasks.</div>`;
     return;
   }
 

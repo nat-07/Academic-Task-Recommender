@@ -77,28 +77,11 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     hist_df = pd.read_sql(hist_query, conn, params=[user_id])
     hist_df["accepted"] = hist_df["accepted"].fillna(False).astype(int)
 
-    if not hist_df.empty and hist_df["accepted"].nunique() > 1:
+    if len(hist_df) >= 5 and hist_df["accepted"].nunique() > 1:
 
-        hist_df["created_at"] = pd.to_datetime(hist_df["created_at"]).dt.tz_localize(None)
-        now = datetime.now()
-        days_diff = (now - hist_df["created_at"]).dt.days
-        hist_df["recency_weight"] = np.exp(-days_diff / 7)
-
-        hist_task_types = pd.get_dummies(hist_df["task_type"], prefix="type")
-
-        X_hist = pd.concat([
-            hist_df[[
-                "task_difficulty",
-                "estimated_time",
-                "module_likeness",
-                "module_difficulty",
-                "motivation"
-            ]],
-            hist_task_types
-        ], axis=1)
-
-        X_hist = X_hist.reindex(columns=X.columns, fill_value=0).fillna(0)
-
+        # -------------------------
+        # TRAIN ML MODEL
+        # -------------------------
         model = make_pipeline(
             StandardScaler(),
             GradientBoostingClassifier()
@@ -113,11 +96,36 @@ def recommend_tasks(conn, user_id, motivation=2.5):
         df["ml_score"] = model.predict_proba(X)[:, 1]
 
     else:
+
+        # ============================================================
+        # ✅ IMPROVED COLD START (PUT IT HERE)
+        # ============================================================
+
+        df["norm_time"] = df["estimated_time"] / df["estimated_time"].max()
+
+        df["difficulty_match"] = 1 - abs(df["task_difficulty"] - df["motivation"]) / 5
+
+        df["base_score"] = (
+            0.35 * df["module_likeness"] +
+            0.25 * df["difficulty_match"] +
+            0.15 * df["motivation"] -
+            0.15 * df["norm_time"]
+        )
+
+        type_weights = {
+            "Lecture": 0.2,
+            "Reading": 0.3,
+            "Practice": 0.5,
+        }
+
+        df["type_score"] = df["task_type"].map(type_weights).fillna(0.3)
+
+        df["exploration"] = np.random.uniform(0, 0.1, len(df))
+
         df["ml_score"] = (
-            0.4 * df["module_likeness"] +
-            0.3 * df["motivation"] -
-            0.2 * df["task_difficulty"] -
-            0.1 * (df["estimated_time"] / 60)
+            df["base_score"] +
+            df["type_score"] +
+            df["exploration"]
         )
 
     # ============================================================
@@ -164,10 +172,28 @@ def recommend_tasks(conn, user_id, motivation=2.5):
                 df["cf_score"] = df["task_id"].map(cf_series).fillna(0)
 
             n_users, n_tasks = user_task_matrix.shape
-            n_components = max(2, min(10, n_users, n_tasks) - 1)
+
+        # 🚨 SAFETY CHECK
+        if n_users < 2 or n_tasks < 2:
+            # Not enough data for SVD
+            df["mf_score"] = 0
+        else:
+            n_components = min(10, n_users, n_tasks) - 1
 
             svd = TruncatedSVD(n_components=n_components, random_state=42)
             latent_matrix = svd.fit_transform(user_task_matrix)
+
+            reconstructed = np.dot(latent_matrix, svd.components_)
+
+            reconstructed_df = pd.DataFrame(
+                reconstructed,
+                index=user_task_matrix.index,
+                columns=user_task_matrix.columns
+            )
+
+            user_predictions = reconstructed_df.loc[user_id]
+
+            df["mf_score"] = df["task_id"].map(user_predictions).fillna(0)
 
             reconstructed = np.dot(latent_matrix, svd.components_)
 

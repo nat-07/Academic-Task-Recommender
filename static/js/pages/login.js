@@ -32,11 +32,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-window.onload = async () => {
+async function checkSessionAndRedirect() {
   const res = await fetch("/api/check-session");
   const data = await res.json();
 
   if (data.logged_in) {
     window.location.href = "/homepage";
   }
-};
+}
+
+// normal load
+window.onload = checkSessionAndRedirect;
+
+// back/forward navigation
+window.addEventListener("pageshow", checkSessionAndRedirect);
