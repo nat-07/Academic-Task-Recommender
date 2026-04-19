@@ -1,0 +1,86 @@
+body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #007bff;
+    }
+
+    .container {
+      max-width: 400px;
+      margin: 80px auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    input {
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .create-button {
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .create-button:hover {
+      background: #0056b3;
+    }
+
+    #goToLoginBtn {
+      background: none;
+      border: none;
+      color: #007bff;
+      cursor: pointer;
+      font-size: 15px;
+      text-decoration: underline;
+      padding: 10px;
+    }
+
+    #goToLoginBtn:hover {
+      color: #0056b3;
+    }
+
+    /* ---------------- MOBILE ---------------- */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+        background: white;
+      }
+
+      .container {
+        max-width: 100%;
+        margin: 20px 0;
+        padding: 20px;
+      }
+
+      input {
+        font-size: 18px;
+        padding: 14px;
+      }
+
+      .create-button {
+        font-size: 18px;
+        padding: 14px;
+      }
+
+      .login-link {
+        font-size: 16px;
+      }
+    }

@@ -1,0 +1,205 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Task Recommender</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
+    
+  </head>
+<div id="tutorialModal" class="modal">
+  <div class="modal-content">
+
+    <h3>About</h3>
+    This app acts as an academic tool for students by utilising a recommendation system.
+    The recommendation system uses the user's module info, tasks, previous task history and motivation levels to help to help rank their study tasks. 
+   
+    <h3>Tutorial</h3>
+
+    <p><b>1. Modules</b><br>
+    Click "Edit Modules" → "+ Add Module".</br>
+    Pick your module out of the currently listed (more will be added in future updates), and set how much you like that module with "Likeability", and how difficult it is with "Difficulty". </br> 
+    You can edit and delete your modules. However, deleting a module will also delete the current active tasks corresponding to that module. 
+    
+    <p><b>2. Tasks</b><br>
+    Note: You must add a module first before adding a task. </br>
+    Click "+ Add Task". Assign a module, task type, and difficulty to that task. Afterwards, save the task. The recommender system will automatically update.</p>
+
+    <p><b>3. Getting Ranked Tasks</b><br>
+    Use the slider to match how motivated you feel at the moment.</br>
+    Click "Get Tasks" to receive recommendations</p>
+
+    <p><b>4. Complete Tasks</b><br>
+    Click "Done" to track progress</p>
+
+    <div class="modal-actions">
+      <button id="closeTutorialBtn" class="task-btn cancel">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="addModuleModal" class="modal">
+  <div class="modal-content">
+    <h3>Add Module</h3>
+
+    <!-- Module Name Dropdown -->
+    <select id="addModuleDropdown">
+      <option value="" disabled selected>Select module</option>
+      <option value="Algorithmics">Algorithmics</option>
+      <option value="Software Modelling">Software Modelling</option>
+      <option value="Databases">Databases</option>
+      <option value="Proofs">Proofs</option>
+    </select>
+
+    <!-- Likeness Slider -->
+    <label>Module Likeability</label>
+    <small class="helper-text">How much do you like this module? (0 = Hate it!, 1 = Love it!)</small>
+    <input type="range" id="addLikeness" min="0" max="1" step="0.1" value="0.5" />
+    <span id="addLikenessVal">0.5</span>
+
+    <!-- Difficulty Input -->
+    <label>Difficulty</label>
+    <small class="helper-text">How difficult is this module for you? (0 = easy, 1 = hard)</small>
+    <input type="range" id="addDifficulty" min="0" max="1" step="0.1" value="0.5" />
+    <span id="addDifficultyVal">0.5</span>
+
+
+    <div class="modal-actions">
+      <button id="saveAddModuleBtn" class="task-btn">Save</button>
+      <button id="closeAddModuleModal" class="task-btn cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+  
+  <div id="editModuleModal" class="modal">
+    <div class="modal-content">
+      <h3 id="moduleModalTitle">Edit Module</h3>
+      
+      <input type="text" id="editModuleName" placeholder="Module name" disabled />
+
+      <label>Module Likeability</label>
+      <small class="helper-text">How much do you like this module? (0 = Hate it!, 1 = Love it!)</small>
+
+      <input
+        type="range"
+        id="editLikeness"
+        min="0"
+        max="1"
+        step="0.1"
+        value="0.5"
+      />
+      <span id="likenessVal">0.5</span>
+
+      <label>Module Difficulty</label>
+      <small class="helper-text">How difficult is this module for you? (0 = easy, 1 = hard)</small>
+
+      
+      <input
+        type="range"
+        id="editDifficulty"
+        min="0"
+        max="1"
+        step="0.1"
+        value="0.5"
+      />
+      <span id="difficultyVal">0.5</span>
+
+      <div class="modal-actions">
+        <button id="saveModuleChanges" class="task-btn">Save</button>
+        <button id="deleteModuleBtn" class="task-btn cancel">Delete</button>
+        <button id="closeEditModal" class="task-btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="taskModal" class="modal">
+  <div class="modal-content">
+    <h3>Add New Task</h3>
+
+    <!-- Task Description -->
+    <input type="text" id="taskNameInput" placeholder="Task description" />
+
+    <!-- Module Dropdown -->
+    <select id="moduleSelect">
+      <!-- Filled dynamically -->
+    </select>
+
+    <!-- Task Type Dropdown -->
+    <select id="taskTypeSelect">
+      <option value="" disabled selected>Select task type</option>
+      <option value="Lecture">Lecture</option>
+      <option value="Reviewing">Reviewing</option>
+      <option value="Coding">Coding</option>
+      <option value="Reading">Reading</option>
+      <option value="Practice">Practice</option>
+    </select>
+
+    <label for="taskDifficulty">Task Difficulty</label>
+    <small class="helper-text">How hard will this task be for you?(0 = easy, 1 = hard)</small>
+
+<input type="range"
+       id="taskDifficulty"
+       min="0"
+       max="1"
+       step="0.1"
+       value="0.5" />
+<span id="taskDifficultyVal">0.5</span>
+
+
+    <!-- Estimated Time -->
+    <label for="estimatedTime">Estimated Time (minutes)</label>
+    <input type="number" id="estimatedTime" min="5" max="300" step="5" value="60" />
+
+    <div class="modal-actions">
+      <button id="saveTaskBtn" class="task-btn">Save</button>
+      <button id="closeModalBtn" class="task-btn cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+  </div>
+  <body>
+
+    <div id="appContainer">
+      <div class="container">
+        <div class="top-bar">
+  <button class="logout-btn" id="logout-btn">Logout</button>
+  <button id="tutorialBtn" class="tutorial-btn">?</button>
+</div>
+        <h2>Task Recommender</h2>
+        <button id="openModalBtn" class="task-btn">+ Add Task</button>
+        <button id="toggleModulesBtn" class="task-btn">Edit Modules</button>
+        <div id="modulesPanel" class="modules-panel" style="display: none">
+          <h4>Modules</h4>
+
+          <div id="modulesList"></div>
+          <button id="openAddModuleBtn" class="task-btn">+ Add Module</button>
+        </div>
+
+        <div class="controls">
+          <label for="motivation">Motivation</label>
+            <small class="helper-text">What is your current motivation? (0 = none, 5 = alot!) </small>
+
+          <div class="slider-row">
+            <input
+              type="range"
+              id="motivation"
+              min="0"
+              max="5"
+              step="0.1"
+              value="2.5"
+            />
+            
+          </div>
+          <span id="val">2.5</span>
+
+          <button id="getTasksBtn" class="task-btn">Get Tasks</button>
+        </div>
+
+        <h3 class="section-title">Recommended Tasks</h3>
+        <small class="helper-text">Ranked from the most to the least recommended, based on algorithm and data</small>
+
+        <div id="recommendationBox"></div>
+      </div>
+
+   <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

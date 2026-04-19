@@ -2,113 +2,10 @@
 <html>
 <head>
   <title>Login</title>
-
   <!-- IMPORTANT: Mobile scaling fix -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #007bff;
-    }
-
-     h2 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 40px auto;
-      background: white;
-      padding: 25px;
-      border-radius: 16px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-      text-align: center;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-    }
-
-    /* ---------------- LOGIN ---------------- */
-    #loginContainer {
-      max-width: 400px;
-      margin: 80px auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-    }
-
-    #loginContainer input {
-      padding: 12px;
-      font-size: 16px; /* prevents iOS zoom + makes it bigger */
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    #loginBtn {
-      padding: 12px;
-      font-size: 16px;
-      border: none;
-      border-radius: 10px;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-    }
-
-    #loginBtn:hover {
-      background: #0056b3;
-    }
-
-    #signupBtn {
-      background: none;
-      border: none;
-      color: #007bff;
-      cursor: pointer;
-      font-size: 15px;
-      text-decoration: underline;
-      padding: 10px;
-    }
-
-    #signupBtn:hover {
-      color: #0056b3;
-    }
-
-    /* ---------------- MOBILE IMPROVEMENTS ---------------- */
-    @media (max-width: 600px) {
-      body {
-        padding: 10px;
-        background: white;
-      }
-
-      #loginContainer {
-        max-width: 100%;
-        margin: 20px 0;
-        padding: 20px;
-        border-radius: 14px;
-      }
-
-      #loginContainer input {
-        font-size: 18px;
-        padding: 14px;
-      }
-
-      #loginBtn {
-        font-size: 18px;
-        padding: 14px;
-      }
-
-      #signupBtn {
-        font-size: 16px;
-      }
-    }
   </style>
 </head>
 
@@ -121,38 +18,10 @@
 
     <button id="loginBtn">Login</button>
 
-    <button id="signupBtn" class="signup-link">
+    <button id="goToSignupBtn" class="signup-link">
       Don't have an account?
     </button>
   </div>
-
-  <script>
-    document.getElementById("signupBtn").onclick = () => {
-      window.location.href = "/signup";
-    };
-
-    document.getElementById("loginBtn").onclick = async () => {
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
-
-      try {
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        });
-
-        const data = await res.json();
-
-        if (data.status === "success") {
-          window.location.href = "/";
-        } else {
-          alert(data.message || "Invalid login");
-        }
-      } catch {
-        alert("Login error");
-      }
-    };
-  </script>
+  <script type="module" src="{{ url_for('static', filename='js/pages/login.js') }}"></script>
 </body>
 </html>
