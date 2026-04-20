@@ -358,16 +358,22 @@ def complete_task():
         # Mark task_history entry as completed and accepted
         cur.execute("""
             UPDATE task_history
-            SET accepted = True
-            WHERE task_id = %s AND user_id = %s
-        """, (task_id, user_id))
+            SET accepted = TRUE
+            WHERE task_id = %s 
+            AND user_id = %s
+            AND created_at = (
+                SELECT MAX(created_at)
+                FROM task_history
+                WHERE task_id = %s AND user_id = %s
+            )
+        """, (task_id, user_id, task_id, user_id))
 
         # Mark the task as inactive
         cur.execute("""
             UPDATE tasks
             SET active = FALSE
-            WHERE task_id = %s
-        """, (task_id,))
+            WHERE task_id = %s AND user_id = %s
+        """, (task_id,user_id))
 
         conn.commit()
         cur.close()

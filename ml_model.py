@@ -79,6 +79,30 @@ def recommend_tasks(conn, user_id, motivation=2.5):
 
     if len(hist_df) >= 5 and hist_df["accepted"].nunique() > 1:
 
+        # Recency weighting
+        hist_df["created_at"] = pd.to_datetime(hist_df["created_at"]).dt.tz_localize(None)
+        now = datetime.now()
+        days_diff = (now - hist_df["created_at"]).dt.days
+        hist_df["recency_weight"] = np.exp(-days_diff / 7)
+
+        # One-hot encode
+        hist_task_types = pd.get_dummies(hist_df["task_type"], prefix="type")
+
+        # Build X_hist
+        X_hist = pd.concat([
+            hist_df[[
+                "task_difficulty",
+                "estimated_time",
+                "module_likeness",
+                "module_difficulty",
+                "motivation"
+            ]],
+            hist_task_types
+        ], axis=1)
+
+        # Align columns with X
+        X_hist = X_hist.reindex(columns=X.columns, fill_value=0).fillna(0)
+
         # -------------------------
         # TRAIN ML MODEL
         # -------------------------
@@ -97,21 +121,39 @@ def recommend_tasks(conn, user_id, motivation=2.5):
 
     else:
 
+        
         # ============================================================
-        # ✅ IMPROVED COLD START (PUT IT HERE)
+        # ✅ IMPROVED COLD START (MODULE-AWARE)
         # ============================================================
 
-        df["norm_time"] = df["estimated_time"] / df["estimated_time"].max()
+        max_time = df["estimated_time"].max() or 1
+        df["norm_time"] = df["estimated_time"] / max_time
 
-        df["difficulty_match"] = 1 - abs(df["task_difficulty"] - df["motivation"]) / 5
+        # ----------------------------------------
+        # Difficulty matching (task + module)
+        # ----------------------------------------
+        df["task_diff_match"] = 1 - abs(df["task_difficulty"] - df["motivation"]) / 5
+        df["module_diff_match"] = 1 - abs(df["module_difficulty"] - df["motivation"]) / 5
 
+        # ----------------------------------------
+        # Module preference (IMPORTANT)
+        # ----------------------------------------
+        df["module_pref"] = df["module_likeness"] * df["module_diff_match"]
+
+        # ----------------------------------------
+        # Base score
+        # ----------------------------------------
         df["base_score"] = (
-            0.35 * df["module_likeness"] +
-            0.25 * df["difficulty_match"] +
-            0.15 * df["motivation"] -
+            0.35 * df["module_pref"] +          # strongest signal
+            0.25 * df["task_diff_match"] +
+            0.20 * df["module_diff_match"] +
+            0.10 * df["motivation"] -           # reduced influence
             0.15 * df["norm_time"]
         )
 
+        # ----------------------------------------
+        # Task-type prior
+        # ----------------------------------------
         type_weights = {
             "Lecture": 0.2,
             "Reading": 0.3,
@@ -120,8 +162,14 @@ def recommend_tasks(conn, user_id, motivation=2.5):
 
         df["type_score"] = df["task_type"].map(type_weights).fillna(0.3)
 
+        # ----------------------------------------
+        # Exploration
+        # ----------------------------------------
         df["exploration"] = np.random.uniform(0, 0.1, len(df))
 
+        # ----------------------------------------
+        # Final ML score
+        # ----------------------------------------
         df["ml_score"] = (
             df["base_score"] +
             df["type_score"] +
@@ -227,12 +275,15 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     # ============================================================
 
     rejection_counts = user_task_df.groupby("task_id")["accepted"].apply(
-        lambda x: (x == 0).sum()
-    )
+    lambda x: (x == 0).sum()
+)
 
     df["rejection_count"] = df["task_id"].map(rejection_counts).fillna(0)
 
-    # Smooth boost (recommended)
+    # Penalty (immediate dislike)
+    df["rejection_penalty"] = -0.2 * (df["rejection_count"] > 0)
+
+    # Recovery boost (gradual reintroduction)
     df["rejection_boost"] = 0.2 * (1 - np.exp(-df["rejection_count"] / 5))
 
     # ============================================================
@@ -250,7 +301,8 @@ def recommend_tasks(conn, user_id, motivation=2.5):
         ml_weight * df["ml_score"] +
         cf_weight * df["cf_score"] +
         mf_weight * df["mf_score"] +
-        df["rejection_boost"]
+        df["rejection_penalty"] +   # push down first
+        df["rejection_boost"]       # bring back slowly
     )
 
     # ============================================================

@@ -31,21 +31,24 @@ export function renderTasks(tasks) {
   }
 
   recommendationBox.innerHTML = tasks
-    .slice(0, 5)
-    .map(
-      (t) => `
-        <div class="task-item">
-          <div class="task-content">
-            <div class="task-name">${t.task_description}</div>
-            <div class="task-type">${t.task_type} • ${t.module_name}</div>
+  .map(
+    (t) => `
+      <div class="task-item">
+        <div class="task-content">
+          <div class="task-name">
+          ${t.rank <= 5 ? "⭐ " : ""}${t.rank}. ${t.task_description}
           </div>
-          <button class="task-btn" data-id="${t.task_id}">
-            Done
-          </button>
+          <div class="task-type">
+            ${t.task_type} • ${t.module_name}
+          </div>
         </div>
-      `
-    )
-    .join("");
+        <button class="task-btn" data-id="${t.task_id}">
+          Done
+        </button>
+      </div>
+    `
+  )
+  .join("");
 
   // attach events AFTER rendering
   recommendationBox.querySelectorAll(".task-btn").forEach((btn) => {
