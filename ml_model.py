@@ -199,10 +199,19 @@ def recommend_tasks(conn, user_id, motivation=2.5):
             fill_value=0
         )
 
+        # Always define shape first
         n_users, n_tasks = user_task_matrix.shape
 
+        # Default scores
+        df["cf_score"] = 0
+        df["mf_score"] = 0
+
+        # Only proceed if user exists
         if user_id in user_task_matrix.index:
 
+            # ---------------------------
+            # A. USER-BASED CF
+            # ---------------------------
             similarity = cosine_similarity(user_task_matrix)
 
             similarity_df = pd.DataFrame(
@@ -221,37 +230,35 @@ def recommend_tasks(conn, user_id, motivation=2.5):
                 cf_series = pd.Series(cf_scores, index=user_task_matrix.columns)
                 df["cf_score"] = df["task_id"].map(cf_series).fillna(0)
 
-            # 🚨 SAFETY CHECK (now always safe)
-        if n_users < 2 or n_tasks < 2:
-            df["mf_score"] = 0
+            # ---------------------------
+            # B. MATRIX FACTORISATION (SVD)
+            # ---------------------------
+            if n_users >= 2 and n_tasks >= 2:
+
+                n_components = min(10, n_users, n_tasks) - 1
+
+                svd = TruncatedSVD(n_components=n_components, random_state=42)
+                latent_matrix = svd.fit_transform(user_task_matrix)
+
+                reconstructed = np.dot(latent_matrix, svd.components_)
+
+                reconstructed_df = pd.DataFrame(
+                    reconstructed,
+                    index=user_task_matrix.index,
+                    columns=user_task_matrix.columns
+                )
+
+                # Safe lookup
+                user_predictions = reconstructed_df.loc[user_id]
+                df["mf_score"] = df["task_id"].map(user_predictions).fillna(0)
+
+            else:
+                df["mf_score"] = 0
+
         else:
-            n_components = min(10, n_users, n_tasks) - 1
-
-            svd = TruncatedSVD(n_components=n_components, random_state=42)
-            latent_matrix = svd.fit_transform(user_task_matrix)
-
-            reconstructed = np.dot(latent_matrix, svd.components_)
-
-            reconstructed_df = pd.DataFrame(
-                reconstructed,
-                index=user_task_matrix.index,
-                columns=user_task_matrix.columns
-            )
-
-            user_predictions = reconstructed_df.loc[user_id]
-
-            df["mf_score"] = df["task_id"].map(user_predictions).fillna(0)
-
-            reconstructed = np.dot(latent_matrix, svd.components_)
-
-            reconstructed_df = pd.DataFrame(
-                reconstructed,
-                index=user_task_matrix.index,
-                columns=user_task_matrix.columns
-            )
-
-            user_predictions = reconstructed_df.loc[user_id]
-            df["mf_score"] = df["task_id"].map(user_predictions).fillna(0)
+            # User not in matrix → no CF or SVD
+            df["cf_score"] = 0
+            df["mf_score"] = 0
 
     # ============================================================
     # 5. NORMALISATION
