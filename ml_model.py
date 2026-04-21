@@ -199,6 +199,8 @@ def recommend_tasks(conn, user_id, motivation=2.5):
             fill_value=0
         )
 
+        n_users, n_tasks = user_task_matrix.shape
+
         if user_id in user_task_matrix.index:
 
             similarity = cosine_similarity(user_task_matrix)
@@ -219,11 +221,8 @@ def recommend_tasks(conn, user_id, motivation=2.5):
                 cf_series = pd.Series(cf_scores, index=user_task_matrix.columns)
                 df["cf_score"] = df["task_id"].map(cf_series).fillna(0)
 
-            n_users, n_tasks = user_task_matrix.shape
-
-        # 🚨 SAFETY CHECK
+            # 🚨 SAFETY CHECK (now always safe)
         if n_users < 2 or n_tasks < 2:
-            # Not enough data for SVD
             df["mf_score"] = 0
         else:
             n_components = min(10, n_users, n_tasks) - 1
@@ -316,6 +315,7 @@ def recommend_tasks(conn, user_id, motivation=2.5):
     ml_weight * df["ml_score"].fillna(0) +
     cf_weight * df["cf_score"].fillna(0) +
     mf_weight * df["mf_score"].fillna(0) +
+    df["rejection_penalty"].fillna(0) +
     df["rejection_boost"].fillna(0)
 )
 
