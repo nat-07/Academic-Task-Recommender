@@ -6,7 +6,7 @@ import {
   refreshModules
 } from "./state.js";
 
-import { editModule, addModule, deleteModule, loadModulesRequest, getRecommendationsRequest, completeTaskRequest, addTaskRequest } from "./api.js";
+import { updateModule, addModule, deleteModule, loadModulesRequest, getRecommendationsRequest, completeTaskRequest, addTask } from "./api.js";
 
 export function openTutorialModal() {
   const tutorialModal = document.getElementById("tutorialModal");
@@ -119,9 +119,9 @@ export async function saveModuleChanges() {
   }
 
   try {
-    const data = await editModule(updatedModule);
+    const data = await updateModule(updatedModule);
 
-    if (data.status !== "success") {
+    if (data.status !== "completed") {
       return alert("Failed to save module");
     }
 
@@ -187,7 +187,7 @@ export async function saveAddModule() {
   try {
     const data = await addModule({ name, likeness, difficulty });
 
-    if (data.status === "success") {
+    if (data.status === "created" ||data.status === "reactivated") {
       addModuleModal.style.display = "none";
 
       
@@ -222,7 +222,7 @@ export async function deleteCurrentModule() {
   try {
     const data = await deleteModule(m.module_id);
 
-    if (data.status === "success") {
+    if (data.status === "deleted") {
       modules.splice(index, 1);
       setModules(modules);
 
@@ -232,6 +232,7 @@ export async function deleteCurrentModule() {
     document.getElementById("modulesList"),
     document.getElementById("moduleSelect")
   );
+  await getRecommendations()
     } else {
       alert(data.message || "Failed to delete module");
     }
@@ -297,7 +298,7 @@ export async function getRecommendations() {
 
   const data = await getRecommendationsRequest(parseFloat(slider.value));
 
-  if (data.status === "ranked") {
+  if (data.status === "success") {
     renderTasks(data.tasks);
   } else {
     renderTasks([]);
@@ -363,7 +364,7 @@ export async function saveTask() {
   }
 
   try {
-    const res = await addTaskRequest({
+    const res = await addTask({
       user_id: 1,
       task_description: description,
       module,
@@ -373,7 +374,7 @@ export async function saveTask() {
     });
 
     // ✅ STOP if backend returned error
-    if (!res || res.status !== "success") {
+    if (!res || res.status !== "created") {
       alert(res?.message || "Failed to add task");
       return;
     }

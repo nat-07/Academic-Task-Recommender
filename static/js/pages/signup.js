@@ -27,7 +27,7 @@ async function handleSignup() {
   try {
     const data = await signupUser(username, password);
 
-    if (data.status === "success") {
+    if (data.status === "created") {
       alert("Account created!");
       window.location.href = "/";
     } else {

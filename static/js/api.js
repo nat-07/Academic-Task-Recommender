@@ -1,20 +1,17 @@
-import { setModules } from "./state.js";
-
 export async function loginUser(username, password) {
-  const res = await fetch("/api/login", {
+  const res = await fetch("/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
+
   return res.json();
 }
 
 export async function signupUser(username, password) {
-  const res = await fetch("/api/sign-up", {
+  const res = await fetch("/auth/signup", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
 
@@ -22,83 +19,78 @@ export async function signupUser(username, password) {
 }
 
 export async function logoutUser() {
-  const res = await fetch("/api/logout", {
-    method: "POST",
+  const res = await fetch("/session", {
+    method: "DELETE",
   });
 
+  return res.ok;
+}
+
+export async function checkSession() {
+  const res = await fetch("/session");
   return res.json();
 }
 
+// -------------------- MODULES --------------------
 
 export async function loadModulesRequest() {
-  const res = await fetch("/api/modules");
+  const res = await fetch("/modules");
   const data = await res.json();
   return data.modules;
 }
 
-
-
 export async function addModule(payload) {
-  return fetch("/api/add-module", {
+  const res = await fetch("/modules", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
-  }).then((r) => r.json());
-}
-
-export async function editModule(payload) {
-  return fetch("/api/edit-module", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  }).then((r) => r.json());
-}
-
-export async function deleteModule(module_id) {
-  return fetch("/api/delete-module", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ module_id }),
-  }).then((r) => r.json());
-}
-
-export async function getRecommendationsRequest(motivation) {
-  const res = await fetch("/api/recommend-task", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ motivation }),
   });
 
   return res.json();
 }
 
-export async function completeTaskRequest(taskId, motivation) {
-  const res = await fetch("/api/complete-task", {
-    method: "POST",
+export async function updateModule(moduleId, payload) {
+  const res = await fetch(`/modules/${moduleId}`, {
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      task_id: taskId,
-      motivation,
-    }),
+    body: JSON.stringify(payload),
   });
 
   return res.json();
 }
+
+export async function deleteModule(moduleId) {
+  const res = await fetch(`/modules/${moduleId}`, {
+    method: "DELETE",
+  });
+
+  return res.json();
+}
+
+// -------------------- TASKS --------------------
 
 export async function addTask(payload) {
-  return fetch("/api/add-task", {
+  const res = await fetch("/tasks", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+
+  return res.json();
 }
 
-export async function addTaskRequest(taskData) {
-  const res = await fetch("/api/add-task", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(taskData),
+export async function completeTaskRequest(taskId) {
+  const res = await fetch(`/tasks/${taskId}/complete`, {
+    method: "PATCH",
   });
+
+  return res.json();
+}
+
+export async function getRecommendationsRequest(motivation = 2.5) {
+  const res = await fetch(
+    `/tasks/recommendations?motivation=${encodeURIComponent(motivation)}`
+  );
 
   return res.json();
 }

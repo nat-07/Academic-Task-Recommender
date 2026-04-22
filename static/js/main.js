@@ -40,7 +40,7 @@ document.getElementById("saveModuleChanges").onclick = saveModuleChanges;
 
 document.getElementById("getTasksBtn").onclick = getRecommendations;
 window.onload = async () => {
-     const res = await fetch("/api/check-session");
+     const res = await fetch("/session");
   const data = await res.json();
 
   if (!data.logged_in) {

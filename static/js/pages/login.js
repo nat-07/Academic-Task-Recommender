@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function checkSessionAndRedirect() {
-  const res = await fetch("/api/check-session");
+  const res = await fetch("/session");
   const data = await res.json();
 
   if (data.logged_in) {
